@@ -370,12 +370,12 @@ function startApp() {
   unsubs.push(onSnapshot(collection(db, "bans"), (qs) => {
     S.bans = {};
     qs.forEach((d) => (S.bans[d.id] = d.data(SNAP)));
-    renderBan(); renderFines();
+    renderBan(); renderFines(); renderHome();
   }, (err) => console.error(err)));
 
   unsubs.push(onSnapshot(collection(db, "fines"), (qs) => {
     S.fines = qs.docs.map((d) => ({ id: d.id, ...d.data(SNAP) }));
-    renderFines(); renderChat();
+    renderFines(); renderChat(); renderHome();
   }, (err) => console.error(err)));
 
   unsubs.push(onSnapshot(query(collection(db, "notices"), orderBy("createdAt", "desc"), limit(5)), (qs) => {
@@ -446,12 +446,12 @@ function subscribeWeek() {
     }),
     onSnapshot(doc(db, "settlements", S.wedKey), (d) => {
       S.settle = d.exists() ? d.data(SNAP) : null;
-      renderSettle();
+      renderSettle(); renderHome();
     }),
     onSnapshot(collection(db, "settlements", S.wedKey, "paid"), (qs) => {
       S.paid = {};
       qs.forEach((d) => (S.paid[d.id] = d.data()));
-      renderSettle();
+      renderSettle(); renderHome();
     }),
   ];
   S.settle = null; S.paid = {};
@@ -491,6 +491,17 @@ document.addEventListener("click", (e) => {
   const g = e.target.closest("[data-goto]");
   if (g) showTab(g.dataset.goto);
   if (e.target.closest("[data-open-cal]")) openCal();
+  const action = e.target.closest("[data-dashboard-action]");
+  if (action) {
+    const key = action.dataset.dashboardAction;
+    if (key === "plan") $("#plan-edit-btn").click();
+    else if (key === "polls") showTab("polls");
+    else {
+      const target = key === "rsvp" ? $(".dashboard-rsvp") : key === "settle" ? $("#settle-card") : $("#fine-card");
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (key === "rsvp") $(".rsvp")?.focus({ preventScroll: true });
+    }
+  }
 });
 
 // ============================================================
@@ -658,11 +669,18 @@ function renderHome() {
   const ev = S.event;
   const updated = ev?.updatedByName ? `<div class="plan-foot">${esc(ev.updatedByName)} 님이 ${ago(toDate(ev.updatedAt))} 수정</div>` : "";
   const sameDay = S.schedule.filter((s) => s.date === S.wedKey);
+  const planIcon = (name) => ({
+    place: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    time: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    note: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l4 4v14H7z"/><path d="M17 3v5h4M10 13h8M10 17h8"/></svg>',
+    event: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>'
+  })[name];
+  const planRow = (icon, label, value, empty = false) => `<dt><span class="plan-label-icon">${planIcon(icon)}</span>${label}</dt><dd class="${empty ? "empty" : ""}">${value}</dd>`;
   $("#plan-view").innerHTML = `
-    <dt>장소</dt><dd class="${ev?.place ? "" : "empty"}">${esc(ev?.place || "아직 안 정했어요")}</dd>
-    <dt>시간</dt><dd class="${ev?.time ? "" : "empty"}">${esc(ev?.time || CFG.defaultTime || "미정")}</dd>
-    ${ev?.note ? `<dt>메모</dt><dd>${esc(ev.note)}</dd>` : ""}
-    ${sameDay.length ? `<dt>일정</dt><dd>${sameDay.map((s) => esc(s.title)).join(", ")}</dd>` : ""}
+    ${planRow("place", "장소", esc(ev?.place || "아직 안 정했어요"), !ev?.place)}
+    ${planRow("time", "시간", esc(ev?.time || CFG.defaultTime || "미정"), !ev?.time)}
+    ${ev?.note ? planRow("note", "메모", esc(ev.note)) : ""}
+    ${sameDay.length ? planRow("event", "일정", sameDay.map((s) => esc(s.title)).join(", ")) : ""}
     ${updated}`;
 
   // 가는 법 (학교 → 장소)
@@ -676,8 +694,10 @@ function renderHome() {
   const mine = S.attendance.find((a) => a.uid === S.uid)?.status;
   $$(".rsvp").forEach((b) => b.classList.toggle("on", b.dataset.status === mine));
   const groups = { yes: [], maybe: [], no: [] };
-  S.attendance.forEach((a) => groups[a.status]?.push(memberName(a.uid, a.name)));
-  const answered = new Set(S.attendance.map((a) => a.uid));
+  const validAttendance = S.attendance.filter((a) => S.members[a.uid] && Object.hasOwn(groups, a.status));
+  const attendanceByUid = new Map(validAttendance.map((a) => [a.uid, a]));
+  validAttendance.forEach((a) => groups[a.status].push(memberName(a.uid, a.name)));
+  const answered = new Set(attendanceByUid.keys());
   const noneIds = Object.keys(S.members).filter((id) => !answered.has(id));
   const none = noneIds.map((id) => S.members[id].name);
   const row = (cls, label, arr) => `
@@ -694,25 +714,62 @@ function renderHome() {
       }).join("") : '<span class="muted small">-</span>'}</div>
     </div>`;
   $("#rsvp-lists").innerHTML = row("yes", "참석", groups.yes) + row("maybe", "미정", groups.maybe) + row("no", "불참", groups.no) + pokeRow();
-  $("#rsvp-summary").textContent = `멤버 ${Object.keys(S.members).length}명 중 ${S.attendance.length}명 응답`;
+  const totalMembers = Object.keys(S.members).length;
+  const rsvpData = [{ key: "yes", label: "참석", count: groups.yes.length }, { key: "maybe", label: "미정", count: groups.maybe.length }, { key: "no", label: "불참", count: groups.no.length }, { key: "none", label: "무응답", count: noneIds.length }];
+  const chartTotal = totalMembers || rsvpData.reduce((sum, item) => sum + item.count, 0);
+  const answeredCount = rsvpData.slice(0, 3).reduce((sum, item) => sum + item.count, 0);
+  const chart = $("#rsvp-chart");
+  if (chart) {
+    const segments = rsvpData.map((item) => `<span class="rsvp-segment ${item.key}" style="width:${chartTotal ? item.count / chartTotal * 100 : 0}%"></span>`).join("");
+    const legend = rsvpData.map((item) => `<span class="rsvp-legend-item ${item.key}"><i></i>${item.label} <b>${item.count}</b></span>`).join("");
+    chart.innerHTML = `<div class="rsvp-bar" aria-hidden="true">${segments}</div><div class="rsvp-legend">${legend}</div>`;
+    chart.setAttribute("aria-label", `전체 ${chartTotal}명: ${rsvpData.map((item) => `${item.label} ${item.count}명`).join(", ")}`);
+  }
+  $("#rsvp-summary").textContent = `${answeredCount}/${totalMembers}명 응답`;
 
   renderReportCard();
 
-  // 다가오는 일정
+  // 실제 미완료 항목을 우선순위대로 요약
   const tk = dateKey(today0());
-  const up = S.schedule.filter((s) => s.date >= tk).slice(0, 3);
+  const missingPlan = !ev?.place || !ev?.time;
+  const openPolls = S.polls.filter((p) => !isPollClosed(p));
+  const unvoted = openPolls.filter((p) => !(S.votes[p.id] || []).some((v) => v.uid === S.uid));
+  const actions = [];
+  if (missingPlan) {
+    const missing = [!ev?.place ? "장소" : "", !ev?.time ? "시간" : ""].filter(Boolean).join(" · ");
+    actions.push({ key: "plan", title: "모임 정보를 완성해 주세요", detail: `${missing} 미정`, state: "필요" });
+  }
+  if (!mine) actions.push({ key: "rsvp", title: "참석 여부를 선택해 주세요", detail: `${answeredCount}/${totalMembers}명 응답`, state: "응답 필요" });
+  else if (isOfficer() && noneIds.length) actions.push({ key: "rsvp", title: `응답을 기다리는 멤버 ${noneIds.length}명`, detail: "참석 현황에서 확인할 수 있어요", state: "대기" });
+  if (unvoted.length) actions.push({ key: "polls", title: `참여하지 않은 투표 ${unvoted.length}개`, detail: "진행 중인 투표에 응답해 주세요", state: "참여 필요" });
+  const settlePeople = S.settle?.participants || [];
+  if (S.settle && settlePeople.includes(S.uid) && S.settle.payer !== S.uid && !S.paid[S.uid]) actions.push({ key: "settle", title: "모임 정산을 확인해 주세요", detail: "아직 송금 확인이 되지 않았어요", state: "미완료" });
+  if (S.fines.some((f) => f.uid === S.uid && !f.paid && Number(f.amount) > 0)) actions.push({ key: "fine", title: "미납 벌금이 있어요", detail: `${won(S.fines.filter((f) => f.uid === S.uid && !f.paid).reduce((sum, f) => sum + Number(f.amount || 0), 0))} 미납`, state: "확인 필요" });
+  const actionMark = { plan: "⌖", rsvp: "✓", polls: "☷", settle: "₩", fine: "!" };
+  $("#dashboard-actions").innerHTML = actions.map((a) => `<button class="dashboard-action" type="button" data-dashboard-action="${a.key}"><span class="dashboard-action-mark" aria-hidden="true">${actionMark[a.key]}</span><span class="dashboard-action-copy"><b>${esc(a.title)}</b><small>${esc(a.detail)}</small></span><span class="dashboard-action-state">${esc(a.state)}</span><span class="dashboard-action-arrow" aria-hidden="true">›</span></button>`).join("");
+  $("#dashboard-action-count").textContent = actions.length ? `${actions.length}개` : "";
+  const openPollsBox = $("#dashboard-polls");
+  openPollsBox.hidden = !openPolls.length;
+  $("#dashboard-checks").hidden = !actions.length && !openPolls.length;
+
+  // 다가오는 일정
+  const up = S.schedule.filter((s) => s.date >= tk).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
   $("#home-schedule").innerHTML = up.length
-    ? up.map((s) => `<button class="mini-item" data-open-cal="${s.date}"><span class="t"><b>${esc(dayLabel(parseKey(s.date)))}</b> ${esc(s.title)}</span><span class="small muted">›</span></button>`).join("")
+    ? up.map((s) => `<button class="mini-item" type="button" data-open-cal="${esc(s.date)}"><span class="t"><b>${esc(dayLabel(parseKey(s.date)))}</b> ${esc(s.title)}</span><span class="small muted">›</span></button>`).join("")
     : `<div class="empty-note">예정된 일정이 없어요.${isOfficer() ? " 캘린더에서 날짜를 눌러 추가할 수 있어요." : ""}</div>`;
 
   // 진행 중 투표
-  const open = S.polls.filter((p) => !isPollClosed(p)).slice(0, 4);
-  $("#home-polls").innerHTML = open.length
-    ? open.map((p) => {
-        const voted = (S.votes[p.id] || []).some((v) => v.uid === S.uid);
-        return `<button class="mini-item" data-goto="polls"><span class="t">${esc(p.question)}</span><span class="small ${voted ? "muted" : ""}" style="${voted ? "" : "color:var(--accent);font-weight:700"}">${voted ? "투표함" : "투표하기"}</span></button>`;
-      }).join("")
-    : '<div class="empty-note">진행 중인 투표가 없어요.</div>';
+  $("#home-polls").innerHTML = openPolls.slice(0, 4).map((p) => {
+    const voted = (S.votes[p.id] || []).some((v) => v.uid === S.uid);
+    return `<button class="mini-item" type="button" data-goto="polls"><span class="t">${esc(p.question)}</span><span class="small ${voted ? "muted" : "dashboard-poll-pending"}">${voted ? "투표함" : "투표하기"}</span></button>`;
+  }).join("");
+
+  // 정산·벌금은 실제 내역이 있거나 정산 시점이 지난 경우에만 노출
+  const showSettle = !!S.settle || S.wedKey < tk;
+  const showFine = S.fines.length > 0 || Object.keys(S.bans).length > 0;
+  $("#settle-card").hidden = !showSettle;
+  $("#fine-card").hidden = !showFine;
+  $("#dashboard-operations").hidden = !showSettle && !showFine;
 
   // 최근 대화
   const last = S.messages.slice(-3);

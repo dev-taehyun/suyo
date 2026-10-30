@@ -67,159 +67,103 @@
   <main class="views">
 
     <!-- ===== 홈: 이번 주 수요일 ===== -->
-    <section id="view-home" class="view" data-view="home">
-      <div class="large-head">
-        <div class="large-text">
-          <div id="week-dday" class="eyebrow"></div>
-          <h1 class="large-title">이번 주</h1>
+    <section id="view-home" class="view dashboard" data-view="home">
+      <div class="dashboard-heading">
+        <div class="large-head">
+          <div class="large-text">
+            <div class="dashboard-kicker">수요미식회 <span aria-hidden="true">·</span> WEEKLY</div>
+            <h1 class="large-title">이번 주</h1>
+            <div id="week-dday" class="eyebrow"></div>
+          </div>
+          <button class="cal-btn" id="cal-open" type="button" aria-label="캘린더 열기">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 7h14v10H5zm2 2v2h2v-2zm4 0v2h2v-2zm4 0v2h2v-2zm-8 4v2h2v-2zm4 0v2h2v-2z"/></svg>
+          </button>
         </div>
-        <button class="cal-btn" id="cal-open" type="button" aria-label="캘린더 열기">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 7h14v10H5zm2 2v2h2v-2zm4 0v2h2v-2zm4 0v2h2v-2zm-8 4v2h2v-2zm4 0v2h2v-2z"/></svg>
-        </button>
-      </div>
-
-      <div class="week-stepper">
-        <button class="icon-btn" id="week-prev" aria-label="이전 주">‹</button>
-        <h2 id="week-date"></h2>
-        <button class="icon-btn" id="week-next" aria-label="다음 주">›</button>
+        <div class="week-stepper">
+          <button class="icon-btn" id="week-prev" aria-label="이전 주">‹</button>
+          <h2 id="week-date"></h2>
+          <button class="icon-btn" id="week-next" aria-label="다음 주">›</button>
+        </div>
       </div>
 
       <section class="group" id="notice-card" hidden>
-        <header class="group-head">
-          <h3>공지</h3>
-          <button class="btn ghost sm" type="button" id="notice-write-btn" hidden>공지 쓰기</button>
-        </header>
+        <header class="group-head"><h3>공지</h3><button class="btn ghost sm" type="button" id="notice-write-btn" hidden>공지 쓰기</button></header>
         <div class="card notice-card">
           <div id="notice-list" class="notice-list"></div>
           <form id="notice-form" class="stack tight" hidden>
             <textarea id="notice-text" rows="2" maxlength="300" placeholder="예) 이번 주는 시험이라 쉬어요!" required></textarea>
-            <div class="row">
-              <button class="btn primary sm" type="submit">고정하기</button>
-              <button class="btn ghost sm" type="button" id="notice-cancel">취소</button>
-            </div>
+            <div class="row"><button class="btn primary sm" type="submit">고정하기</button><button class="btn ghost sm" type="button" id="notice-cancel">취소</button></div>
           </form>
         </div>
       </section>
 
-      <section class="group plan-group">
-        <header class="group-head">
-          <h3>모임 계획</h3>
-          <button class="btn ghost sm" id="plan-edit-btn" type="button">수정</button>
-        </header>
-        <div class="card plan-card">
-          <dl id="plan-view" class="plan-list"></dl>
-          <div id="plan-route" class="route" hidden></div>
-          <form id="plan-form" class="stack" hidden>
-            <label for="plan-place">장소</label>
-            <input id="plan-place" list="place-datalist" maxlength="60" placeholder="식당 이름 (맛집 목록에서 고를 수 있어요)">
-            <datalist id="place-datalist"></datalist>
-            <label for="plan-time">모이는 시간</label>
-            <input id="plan-time" type="time">
-            <label for="plan-note">메모</label>
-            <textarea id="plan-note" rows="2" maxlength="300" placeholder="예) 정문 앞에서 만나요, 1인 1만원"></textarea>
-            <div class="row">
-              <button class="btn primary" type="submit">저장</button>
-              <button class="btn ghost" type="button" id="plan-cancel">취소</button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <section class="group">
-        <header class="group-head">
-          <h3>참석 여부</h3>
-          <span id="rsvp-summary" class="muted small"></span>
-        </header>
-        <div class="card">
-          <div class="rsvp-buttons" role="group" aria-label="내 참석 여부">
-            <button class="rsvp yes" data-status="yes">참석</button>
-            <button class="rsvp maybe" data-status="maybe">미정</button>
-            <button class="rsvp no" data-status="no">불참</button>
+      <div class="dashboard-primary">
+        <section class="group plan-group dashboard-plan">
+          <header class="group-head"><h3>다가오는 모임</h3><button class="btn ghost sm" id="plan-edit-btn" type="button">수정</button></header>
+          <div class="card plan-card">
+            <dl id="plan-view" class="plan-list"></dl>
+            <div id="plan-route" class="route" hidden></div>
+            <form id="plan-form" class="stack" hidden>
+              <label for="plan-place">장소</label><input id="plan-place" list="place-datalist" maxlength="60" placeholder="식당 이름 (맛집 목록에서 고를 수 있어요)"><datalist id="place-datalist"></datalist>
+              <label for="plan-time">모이는 시간</label><input id="plan-time" type="time">
+              <label for="plan-note">메모</label><textarea id="plan-note" rows="2" maxlength="300" placeholder="예) 정문 앞에서 만나요, 1인 1만원"></textarea>
+              <div class="row"><button class="btn primary" type="submit">저장</button><button class="btn ghost" type="button" id="plan-cancel">취소</button></div>
+            </form>
           </div>
-          <div id="rsvp-lists" class="rsvp-lists"></div>
+        </section>
+
+        <section class="group dashboard-rsvp">
+          <header class="group-head"><h3>참석 현황</h3><span id="rsvp-summary" class="muted small"></span></header>
+          <div class="card">
+            <div id="rsvp-chart" class="rsvp-chart" role="img" aria-label="참석 현황 그래프"></div>
+            <div class="rsvp-buttons" role="group" aria-label="내 참석 여부"><button class="rsvp yes" data-status="yes">참석</button><button class="rsvp maybe" data-status="maybe">미정</button><button class="rsvp no" data-status="no">불참</button></div>
+            <div id="rsvp-lists" class="rsvp-lists"></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="group dashboard-checks" id="dashboard-checks" hidden>
+        <header class="group-head"><h3>확인할 항목</h3><span id="dashboard-action-count" class="muted small"></span></header>
+        <div id="dashboard-actions" class="dashboard-actions"></div>
+        <section class="group dashboard-polls" id="dashboard-polls" hidden>
+          <header class="group-head"><h3>진행 중인 투표</h3><button class="btn ghost sm" data-goto="polls" type="button">전체 보기</button></header>
+          <div class="card flush"><div id="home-polls" class="mini-list"></div></div>
+        </section>
+      </section>
+
+      <section class="group dashboard-schedule">
+        <header class="group-head"><h3>예정된 일정</h3><button class="btn ghost sm" type="button" data-open-cal>캘린더</button></header>
+        <div class="card flush"><div id="home-schedule" class="mini-list"></div></div>
+      </section>
+
+      <section class="group dashboard-operations" id="dashboard-operations" hidden>
+        <header class="group-head"><h3>모임 정산</h3></header>
+        <div class="dashboard-activity">
+        <section class="group" id="settle-card">
+          <header class="group-head"><h3>N빵 정산</h3><button class="btn ghost sm" type="button" id="settle-edit-btn">정산 시작</button></header>
+          <div class="card"><div id="settle-view"></div>
+            <form id="settle-form" class="stack" hidden>
+              <label for="settle-total">총 금액 (원)</label><input id="settle-total" type="number" inputmode="numeric" min="0" step="10" placeholder="예) 48000" required>
+              <label for="settle-payer">먼저 계산한 사람</label><select id="settle-payer"></select>
+              <label>나눌 사람 <span class="muted small">(기본: 참석 누른 사람)</span></label><div id="settle-people" class="check-grid"></div><div id="settle-account-note" class="muted small"></div><div id="settle-preview" class="settle-preview"></div>
+              <div class="row wrap"><button class="btn primary" type="submit">저장</button><button class="btn ghost" type="button" id="settle-cancel">취소</button><button class="btn danger" type="button" id="settle-delete" hidden>정산 지우기</button></div>
+            </form>
+          </div>
+        </section>
+        <section class="group" id="fine-card">
+          <header class="group-head"><h3>욕설 벌금 <span id="fine-total" class="muted"></span></h3><span class="muted small" id="fine-rule"></span></header>
+          <div class="card"><div id="fine-view"></div></div>
+        </section>
         </div>
       </section>
 
-      <section class="group" id="settle-card">
-        <header class="group-head">
-          <h3>N빵 정산</h3>
-          <button class="btn ghost sm" type="button" id="settle-edit-btn">정산 시작</button>
-        </header>
-        <div class="card">
-          <div id="settle-view"></div>
-          <form id="settle-form" class="stack" hidden>
-            <label for="settle-total">총 금액 (원)</label>
-            <input id="settle-total" type="number" inputmode="numeric" min="0" step="10" placeholder="예) 48000" required>
-            <label for="settle-payer">먼저 계산한 사람</label>
-            <select id="settle-payer"></select>
-            <label>나눌 사람 <span class="muted small">(기본: 참석 누른 사람)</span></label>
-            <div id="settle-people" class="check-grid"></div>
-            <div id="settle-account-note" class="muted small"></div>
-            <div id="settle-preview" class="settle-preview"></div>
-            <div class="row wrap">
-              <button class="btn primary" type="submit">저장</button>
-              <button class="btn ghost" type="button" id="settle-cancel">취소</button>
-              <button class="btn danger" type="button" id="settle-delete" hidden>정산 지우기</button>
-            </div>
-          </form>
-        </div>
+      <section class="group dashboard-report-group">
+        <button class="card report-card" type="button" id="report-open"><span class="eyebrow" id="report-eyebrow"></span><span class="report-line" id="report-line"></span><span class="muted small">월간 리포트 보기 ›</span></button>
       </section>
-
-      <section class="group" id="fine-card">
-        <header class="group-head">
-          <h3>욕설 벌금 <span id="fine-total" class="muted"></span></h3>
-          <span class="muted small" id="fine-rule"></span>
-        </header>
-        <div class="card">
-          <div id="fine-view"></div>
-        </div>
-      </section>
-
-      <section class="group">
-        <header class="group-head">
-          <h3>다가오는 일정</h3>
-          <button class="btn ghost sm" type="button" data-open-cal>캘린더</button>
-        </header>
-        <div class="card flush">
-          <div id="home-schedule" class="mini-list"></div>
-        </div>
-      </section>
-
-      <button class="card report-card" type="button" id="report-open">
-        <span class="eyebrow" id="report-eyebrow"></span>
-        <span class="report-line" id="report-line"></span>
-        <span class="muted small">이달의 리포트 보기 ›</span>
-      </button>
-
-      <section class="group">
-        <header class="group-head">
-          <h3>우리가 간 곳 <span id="history-count" class="muted"></span></h3>
-          <button class="btn ghost sm" type="button" id="history-open">전체 기록</button>
-        </header>
-        <div class="card flush">
-          <div id="home-history" class="mini-list"></div>
-        </div>
-      </section>
-
-      <section class="group">
-        <header class="group-head">
-          <h3>진행 중인 투표</h3>
-          <button class="btn ghost sm" data-goto="polls" type="button">전체 보기</button>
-        </header>
-        <div class="card flush">
-          <div id="home-polls" class="mini-list"></div>
-        </div>
-      </section>
-
-      <section class="group">
-        <header class="group-head">
-          <h3>최근 대화</h3>
-          <button class="btn ghost sm" data-goto="chat" type="button">대화방 가기</button>
-        </header>
-        <div class="card flush">
-          <div id="home-chat" class="mini-list"></div>
-        </div>
-      </section>
+      <div class="dashboard-history-chat">
+        <section class="group"><header class="group-head"><h3>우리가 간 곳 <span id="history-count" class="muted"></span></h3><button class="btn ghost sm" type="button" id="history-open">전체 기록</button></header><div class="card flush"><div id="home-history" class="mini-list"></div></div></section>
+        <section class="group"><header class="group-head"><h3>최근 대화</h3><button class="btn ghost sm" data-goto="chat" type="button">대화방 가기</button></header><div class="card flush"><div id="home-chat" class="mini-list"></div></div></section>
+      </div>
     </section>
 
     <!-- ===== 투표 ===== -->
