@@ -46,52 +46,87 @@
   syncScroll();
   syncAvatar();
 
-  // 연속 곡률(스쿼클) 모서리 — 원호가 아니라 초타원으로 모서리를 그려요
+  // Apple-inspired shape engine: fixed, capsule, concentric
   var SEL = [".btn",".rsvp",".seg",".seg button",".tab",".tabbar",".card",".stat",".sm-select",".chip",".name-pill",".pay-btn",".poke-btn",".chk",
     ".search-form input",".week-stepper",".composer",".photo-btn",".sheet",".modal",".place-card",".set-group",".mem-list",".inv-list",".law-list",".search-results",".cal-day",
     ".card input:not([type=checkbox]):not([type=radio]):not([type=file])",".card select",".card textarea",".modal input",".modal select",".modal textarea",
     ".sheet input:not([type=checkbox]):not([type=radio]):not([type=file])",".sheet select",".sheet textarea",".gate-card input",".gate-card select"].join(",");
-  var N = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--squircle")) || 3, STEPS = 14, info = new WeakMap(), cache = {}, KEYS = ["TopLeft","TopRight","BottomRight","BottomLeft"];
-  function squircle(w, h, r) {
-    var key = w + "|" + h + "|" + r.join(",");
-    if (cache[key]) return cache[key];
-    var m = Math.min(w, h) / 2, e = r.map(function (v) { return Math.min(v, m); }), pts = [];
-    var cx = [e[0], w - e[1], w - e[2], e[3]], cy = [e[0], e[1], h - e[2], h - e[3]];
-    var corner = [[0, 0], [w, 0], [w, h], [0, h]];
-    for (var k = 0; k < 4; k++) {
-      if (!e[k]) { pts.push(corner[k]); continue; }
-      for (var i = 0; i <= STEPS; i++) {
-        var t = (Math.PI / 2) * i / STEPS, c = Math.pow(Math.cos(t), 2 / N), s = Math.pow(Math.sin(t), 2 / N), x, y;
-        if (k === 0) { x = cx[k] - e[k] * c; y = cy[k] - e[k] * s; }
-        else if (k === 1) { x = cx[k] + e[k] * s; y = cy[k] - e[k] * c; }
-        else if (k === 2) { x = cx[k] + e[k] * c; y = cy[k] + e[k] * s; }
-        else { x = cx[k] - e[k] * s; y = cy[k] + e[k] * c; }
-        pts.push([x, y]);
-      }
+  var KEYS = ["TopLeft","TopRight","BottomRight","BottomLeft"], info = new WeakMap(), observed = new Set();
+  var CAPSULE = ".btn,.rsvp,.seg,.seg button,.tab,.tabbar,.sm-select,.chip,.name-pill,.pay-btn,.poke-btn,.chk,.search-form input,.week-stepper,.composer,.photo-btn";
+  var CONTAINER = ".card,.stat,.sheet,.modal,.place-card,.set-group,.mem-list,.inv-list,.law-list,.search-results,.gate-card";
+  function radii(el) {
+    var cs = getComputedStyle(el);
+    return KEYS.map(function (k) { return parseFloat(cs["border" + k + "Radius"]) || 0; });
+  }
+  function px(v) { return Math.max(0, parseFloat(v) || 0); }
+  function shapeMode(el) {
+    if (el.hasAttribute("data-shape")) return el.getAttribute("data-shape");
+    if (el.matches(CAPSULE)) return "capsule";
+    if (el.matches("textarea")) return "concentric";
+    if (el.matches("input,select") && el.closest(CONTAINER)) return "concentric";
+    if (el.matches(CONTAINER)) return "fixed";
+    return "fixed";
+  }
+  function nearestShapeParent(el) {
+    var p = el.parentElement;
+    while (p && p !== document.body) {
+      if (observed.has(p) && p.matches(CONTAINER)) return p;
+      p = p.parentElement;
     }
-    var d = "M" + pts.map(function (p) { return p[0].toFixed(2) + " " + p[1].toFixed(2); }).join("L") + "Z";
-    return (cache[key] = "path('" + d + "')");
+    return null;
   }
-  function paint(el) {
-    var i = info.get(el); if (!i) return;
+  function concentricRadii(el, base) {
+    var parent = nearestShapeParent(el);
+    if (!parent) return base;
+    var pr = parent.getBoundingClientRect(), cr = el.getBoundingClientRect();
+    var insets = [Math.min(cr.left-pr.left, cr.top-pr.top), Math.min(pr.right-cr.right, cr.top-pr.top), Math.min(pr.right-cr.right, pr.bottom-cr.bottom), Math.min(cr.left-pr.left, pr.bottom-cr.bottom)];
+    var parentR = radii(parent);
+    return base.map(function (v, i) {
+      var shared = Math.max(0, parentR[i] - Math.max(0, insets[i]));
+      return Math.min(v || shared, shared);
+    });
+  }
+  function applyShape(el) {
+    var data = info.get(el); if (!data) return;
     var w = el.offsetWidth, h = el.offsetHeight;
-    el.style.clipPath = w && h ? squircle(w, h, i.r) : "";
+    if (!w || !h) return;
+    var r = data.base.slice(), mode = data.mode;
+    if (mode === "capsule") r = [1,1,1,1].map(function () { return Math.min(w,h)/2; });
+    else if (mode === "concentric") r = concentricRadii(el, r);
+    var maxX = w/2, maxY = h/2;
+    r = r.map(function (v) { return Math.max(0, Math.min(v, maxX, maxY)); });
+    el.style.borderRadius = r.map(function(v){return v.toFixed(2)+"px";}).join(" ");
+    el.style.setProperty("--shape-radius", r[0].toFixed(2)+"px");
+    el.setAttribute("data-shape-resolved", mode);
   }
-  var CAN = !!(window.CSS && CSS.supports && CSS.supports("clip-path", "path('M0 0L1 0L1 1Z')"));
-  var ro = CAN && "ResizeObserver" in window ? new ResizeObserver(function (es) { es.forEach(function (e) { paint(e.target); }); }) : null;
   function adopt(el) {
     if (info.has(el)) return;
-    var cs = getComputedStyle(el), r = KEYS.map(function (k) { return parseFloat(cs["border" + k + "Radius"]) || 0; });
-    if (!r.some(Boolean)) { info.set(el, null); return; }
-    info.set(el, { r: r });
-    el.style.borderRadius = "0";
+    var base = radii(el);
+    if (!base.some(Boolean) && !el.matches(CAPSULE)) return;
+    var mode = shapeMode(el);
+    info.set(el, { base: base, mode: mode });
+    observed.add(el);
     if (ro) ro.observe(el);
-    paint(el);
+    applyShape(el);
   }
+  var ro = "ResizeObserver" in window ? new ResizeObserver(function (entries) {
+    entries.forEach(function (entry) { applyShape(entry.target); });
+    entries.forEach(function (entry) {
+      var parent = entry.target;
+      observed.forEach(function (el) { if (el !== parent && parent.contains(el) && info.get(el).mode === "concentric") applyShape(el); });
+    });
+  }) : null;
   var queued = false;
   function scanShapes() {
     if (queued) return; queued = true;
-    requestAnimationFrame(function () { queued = false; document.querySelectorAll(SEL).forEach(adopt); });
+    requestAnimationFrame(function () {
+      queued = false;
+      document.querySelectorAll(SEL).forEach(adopt);
+      observed.forEach(function (el) { if (el.isConnected) applyShape(el); else { observed.delete(el); info.delete(el); if (ro) ro.unobserve(el); } });
+    });
   }
-  if (ro) { scanShapes(); window.addEventListener("load", scanShapes); new MutationObserver(scanShapes).observe(document.body, { childList: true, subtree: true }); }
+  scanShapes();
+  window.addEventListener("load", scanShapes);
+  if (ro) window.addEventListener("resize", scanShapes, { passive: true });
+  new MutationObserver(scanShapes).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "data-shape"] });
 })();

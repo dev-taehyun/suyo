@@ -861,15 +861,17 @@ body{font-family:var(--font-body);letter-spacing:-.01em}
 .week-stepper,.composer,.opt-row .icon-btn,.photo-btn{border-radius:980px}
 .sm-select,.name-pill,.chip,.pay-btn,.poke-btn,.check-grid .chk,.composer .btn{border-radius:980px}
 
-/* ---- 연속 곡률(스쿼클) 모서리: JS가 clip-path로 그려요. 테두리·그림자는 잘리므로 면 색으로 대체 ---- */
-:root{--squircle:3;--glass:rgb(232 232 237/.85)}
+/* ---- Apple-inspired shape system: native corner geometry with concentric radius calculation ---- */
+:root{--shape-exponent:3;--glass:rgb(232 232 237/.85)}
 :root[data-theme="dark"]{--glass:rgb(44 44 46/.82)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass:rgb(44 44 46/.82)}}
-.tabbar{box-shadow:none}
-.seg button.on{box-shadow:none}
-.rsvp{border:0}
-.card.notice-card{background:var(--accent-soft);box-shadow:none}
-:is(.card,.sheet,.modal,.gate-card) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){border:0;box-shadow:none;background:var(--bg)}
+.card.notice-card{background:var(--accent-soft)}
+:is(.card,.sheet,.modal,.gate-card) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){background:var(--bg)}
 :is(.sheet,.gate-card) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){background:var(--surface)}
-:is(.card,.sheet,.modal,.gate-card) :is(input,select,textarea):focus{outline:0;box-shadow:none;background:var(--surface-2)}
+:is(.card,.sheet,.modal,.gate-card) :is(input,select,textarea):focus{outline:0;background:var(--surface-2)}
 :is(.btn,.rsvp,.tab):focus-visible{outline:0;filter:brightness(.9)}
+
+/* Progressive enhancement: superellipse corners where the browser supports CSS corner-shape. */
+@supports (corner-shape: superellipse(3)){
+  :is(.btn,.rsvp,.seg,.seg button,.tab,.tabbar,.card,.stat,.sm-select,.chip,.name-pill,.pay-btn,.poke-btn,.chk,.search-form input,.week-stepper,.composer,.photo-btn,.sheet,.modal,.place-card,.set-group,.mem-list,.inv-list,.law-list,.search-results,.cal-day,input,select,textarea){corner-shape:superellipse(var(--shape-exponent));}
+}
