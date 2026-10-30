@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squircle Geometry Test v12</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body{padding:24px;font:14px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;color:#111}.case{margin:18px 0;padding:14px;background:#fff;border-radius:12px}.seg.test{display:grid;width:320px;box-sizing:border-box;gap:0;padding:2px;height:32px;border-radius:9px!important}.seg.test>button{display:block;width:100%;height:100%;min-height:0;padding:0;border-radius:7px!important}.seg.test.uniform4{height:40px;padding:4px}.seg.test.asym{padding:4px 3px 5px 2px}.seg.test.small{height:48px;padding:2px;border-radius:12px!important}.seg.test.small>button{border-radius:10px!important}#result{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace}.note{color:#666;font-size:12px}.hidden-hooks{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="hidden-hooks"><div id="nav-title"></div><div class="tabbar"><div class="tab active" data-tab="test"><span>Test</span></div></div><div id="me-name">Test</div><div id="me-avatar"></div><div id="set-avatar"></div></div>
+<h2>Squircle geometry test · v12</h2>
+<p class="note">실제 브라우저가 계산한 clip-path 좌표를 읽습니다. 각 부모 다각형 변과 대응하는 자식 변의 평행성 및 수직 간격을 측정합니다. 이 버전은 실제 14분할 다각형의 유클리드 내부 오프셋을 계산하고, 꼭짓점·변 중점의 실제 최단거리를 추가 검증합니다. 반복 형상은 LRU 캐시로 재사용합니다.</p>
+<section class="case"><b>A · 균일 inset 2px</b><div class="seg test"><button class="on">Test</button></div></section>
+<section class="case"><b>B · 균일 inset 4px</b><div class="seg test uniform4"><button class="on">Test</button></div></section>
+<section class="case"><b>C · 비대칭 inset L2 / T4 / R3 / B5px</b><div class="seg test asym"><button class="on">Test</button></div></section>
+<section class="case"><b>D · 큰 곡률, 균일 inset 2px</b><div class="seg test small"><button class="on">Test</button></div></section>
+<pre id="result">측정 중…</pre>
+<script src="ui.js?v=12"></script>
+<script>
+(function(){
+ const out=document.getElementById('result');
+ function readPath(el){const s=getComputedStyle(el).clipPath,m=s.match(/path\(["']?([\s\S]*?)["']?\)/i);if(!m)return null;const nums=m[1].match(/[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?/gi);if(!nums||nums.length<6)return null;const r=el.getBoundingClientRect(),sx=r.width/el.offsetWidth,sy=r.height/el.offsetHeight,a=[];for(let i=0;i+1<nums.length;i+=2)a.push([r.left+Number(nums[i])*sx,r.top+Number(nums[i+1])*sy]);return a}
+ function pointSegment(p,a,b){const x=b[0]-a[0],y=b[1]-a[1],d=x*x+y*y,t=d?Math.max(0,Math.min(1,((p[0]-a[0])*x+(p[1]-a[1])*y)/d)):0;return Math.hypot(p[0]-a[0]-t*x,p[1]-a[1]-t*y)}
+ function nearestStats(a,b){const ds=[];for(let i=0;i<a.length;i++){const p=a[i],q=a[(i+1)%a.length];for(let j=0;j<20;j++){const t=j/20,x=[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t];let d=Infinity;for(let k=0;k<b.length;k++)d=Math.min(d,pointSegment(x,b[k],b[(k+1)%b.length]));ds.push(d)}}ds.sort((x,y)=>x-y);const at=p=>ds[Math.min(ds.length-1,Math.floor((ds.length-1)*p))];return{min:ds[0],median:at(.5),p95:at(.95),max:ds[ds.length-1],mean:ds.reduce((a,b)=>a+b,0)/ds.length}}
+ function vertexStats(a,b){const ds=a.map(p=>{let d=Infinity;for(let k=0;k<b.length;k++)d=Math.min(d,pointSegment(p,b[k],b[(k+1)%b.length]));return d}).sort((x,y)=>x-y),at=p=>ds[Math.min(ds.length-1,Math.floor((ds.length-1)*p))];return{min:ds[0],median:at(.5),max:ds[ds.length-1]}}
+ function edgeStats(parent,child){const gaps=[],angles=[],endErrors=[];for(let i=0;i<parent.length;i++){const a=parent[i],b=parent[(i+1)%parent.length],c=child[i],d=child[(i+1)%child.length],ux=b[0]-a[0],uy=b[1]-a[1],vx=d[0]-c[0],vy=d[1]-c[1],len=Math.hypot(ux,uy),vlen=Math.hypot(vx,vy);if(!len||!vlen)continue;const g1=(ux*(c[1]-a[1])-uy*(c[0]-a[0]))/len,g2=(ux*(d[1]-a[1])-uy*(d[0]-a[0]))/len;gaps.push(g1,g2);endErrors.push(Math.abs(g1-g2));angles.push(Math.abs(ux*vy-uy*vx)/(len*vlen))}gaps.sort((a,b)=>a-b);const at=p=>gaps[Math.floor((gaps.length-1)*p)];return{perpendicularGap:{min:gaps[0],median:at(.5),max:gaps[gaps.length-1]},maxEndpointGapDifference:Math.max(...endErrors),maxSinAngle:Math.max(...angles)}}
+ function fmt(o){return Object.fromEntries(Object.entries(o).map(([k,v])=>[k,typeof v==='number'?+v.toFixed(4):fmt(v)]))}
+ function run(){const lines=[];document.querySelectorAll('.seg.test').forEach((p,i)=>{const c=p.querySelector('button'),P=readPath(p),C=readPath(c),name=['균일 2px','균일 4px','비대칭 L2/T4/R3/B5','큰 곡률 2px'][i];if(!P||!C||P.length!==C.length){lines.push(name+': clip-path 좌표 파싱 실패 또는 점 개수 불일치\nparent='+getComputedStyle(p).clipPath+'\nchild='+getComputedStyle(c).clipPath);return}const edge=edgeStats(P,C),near=nearestStats(P,C),reverse=nearestStats(C,P),parentCorners=vertexStats(P,C),childCorners=vertexStats(C,P),expected=i===1?4:2,passed=i!==2&&Math.abs(edge.perpendicularGap.min-expected)<.025&&Math.abs(edge.perpendicularGap.max-expected)<.025&&edge.maxEndpointGapDifference<.025&&edge.maxSinAngle<.001;lines.push('CASE '+String.fromCharCode(65+i)+' · '+name+'\n대응 변의 수직 간격(px): '+JSON.stringify(fmt(edge.perpendicularGap))+'\n같은 변 양 끝의 간격 차이(px): '+edge.maxEndpointGapDifference.toFixed(4)+'\n변 평행도 sin(theta): '+edge.maxSinAngle.toFixed(6)+'\n부모 경계 표본 최단거리(px): '+JSON.stringify(fmt(near))+'\n자식 경계 표본 최단거리(px): '+JSON.stringify(fmt(reverse))+'\n부모 꼭짓점→자식 경계(px): '+JSON.stringify(fmt(parentCorners))+'\n자식 꼭짓점→부모 경계(px): '+JSON.stringify(fmt(childCorners))+'\n판정: '+(i===2?'비대칭 inset이므로 원본 자식 곡선 유지':passed?'유클리드 내부 오프셋 통과':'오프셋 검증 실패'))});out.textContent=lines.join('\n\n')+'\n\n측정 정의: 대응 변의 수직 간격·평행도와 양쪽 경계의 표본 최단거리를 분리해 측정합니다. 꼭짓점→반대 경계 거리도 별도로 기록합니다. 볼록 다각형의 안쪽 유클리드 오프셋은 평행 이동한 반평면의 교집합이므로 마이터 교점이 수학적으로 정확합니다. 둥근 조인은 바깥쪽 오프셋에 해당하며 안쪽 간격을 일정하게 만들지 못합니다. 꼭짓점→반대 경계의 최대 거리가 d보다 커지는 것은 코너 각도에 따른 방향성 거리 차이이며, 양방향 거리를 모두 d로 만들 수는 없습니다. 꼭짓점에서 부모→자식 거리가 커지는 정도는 코너 회전각에 의해 결정됩니다. 실제 사용 브라우저에서 실행한 결과를 표시합니다.'}
+ requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(run,400)));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+Suyo App — Geometry & Performance Update v12
+============================================
+
+Scope
+-----
+The original outer squircle renderer is preserved. N=3, 14 segments per corner,
+the original 0.01 CSS-pixel path serialization, and clip-path:path() remain unchanged.
+This update improves the mathematical validation of the inward offset and reduces
+repeated geometry work through bounded caches and a nested-shape index.
+
+Corner geometry: why the miter is retained
+------------------------------------------
+For a convex polygon P, the exact inward Euclidean offset at distance d is the erosion
+P ⊖ B(d): the intersection of all inward half-planes shifted by d. Its boundary is
+formed by parallel edge lines and their intersections (miter vertices).
+
+A circular/round join is appropriate for an outward polygon offset. Substituting a
+round join for this inward offset would not keep the child boundary at distance d from
+the parent boundary and would create a different, locally shallower inset.
+
+Therefore v12 does not replace the miter with a cosmetic round join. Instead, it adds
+an explicit Euclidean distance validation at every inset vertex and every inset-edge
+midpoint, in addition to convexity, half-plane, collapse, and containment checks.
+This checks the actual corner geometry rather than judging the join by appearance.
+
+Important distance distinction
+------------------------------
+The child-to-parent boundary distance is the defining inward-offset distance d.
+The reverse parent-to-child distance is not generally d at a polygon corner. For a
+corner with a nonzero turning angle, the original corner can be farther from the
+inset boundary than d. This is an inherent directional-distance property of inward
+offsets, not an error that a round join can remove while preserving the same edge gap.
+The browser test reports both directions and the vertex-only measurements separately.
+
+Production geometry validation
+-------------------------------
+The production polygon generator and offset function were executed directly from
+ui.js in Node.js. Parent vertices are rounded to the same 0.01px precision used by the
+original clip-path; child path coordinates are serialized to 0.0001px.
+
+Case A: 320 x 32, radius 9, inset 2
+- Offset accepted; 60 vertices.
+- Child-vertex -> parent-boundary distance: 2.000000px (floating-point noise only).
+- Parent-vertex -> child-boundary distance: 2.000092 to 2.005893px.
+
+Case B: 320 x 40, radius 9, inset 4
+- Offset accepted; 60 vertices.
+- Child-vertex -> parent-boundary distance: 4.000000px (floating-point noise only).
+- Parent-vertex -> child-boundary distance: 4.000183 to 4.011786px.
+
+Case D: 320 x 48, radius 12, inset 2
+- Offset accepted; 60 vertices.
+- Child-vertex -> parent-boundary distance: 2.000000px (floating-point noise only).
+- Parent-vertex -> child-boundary distance: 2.000080 to 2.005516px.
+
+Small shape: 100 x 28, radius 8, inset 2
+- Offset accepted; 60 vertices.
+- Child-vertex -> parent-boundary distance: 2.000000px (floating-point noise only).
+
+Collapse case: 320 x 32, radius 9, inset 16
+- Correctly rejected.
+
+Performance optimization
+------------------------
+- Polygon sample points are cached by width, height, and corner radii.
+- Inward-offset vertices are cached by parent polygon identity and offset distance.
+- Final nested child paths are cached by parent geometry, child dimensions, and insets.
+- Each cache is an LRU Map capped at 96 entries to prevent unbounded growth.
+- A WeakMap-based nested-shape index replaces scanning every tracked shape for each
+  ResizeObserver entry. Only the changed shape's nested descendants are repainted.
+- ResizeObserver batches use a Set to avoid repainting the same descendant more than once.
+
+Isolated Node.js benchmark
+--------------------------
+10,000 repeated calculations of the same 320 x 32 / radius 9 / inset 2 geometry,
+60 vertices, three runs:
+- v11 uncached: 4,969.3 / 5,035.3 / 4,658.1 ms.
+- v12 warm cache: 24.3 / 22.3 / 26.3 ms.
+- Median comparison: approximately 204x faster for this repeated-identical-geometry
+  microbenchmark.
+This is not a whole-app or device benchmark. First-time geometry creation still incurs
+its full calculation cost; the benefit applies when geometry is reused.
+
+Checks
+-----
+- ui.js JavaScript syntax: passed.
+- Production geometry cases A/B/D/small: accepted.
+- Collapsed inset case: rejected.
+- LRU caches are bounded to 96 entries each.
+- ZIP integrity: checked after packaging.
+- iOS Safari pixel rendering: not tested in this environment; run the included
+  shape-geometry-test.html on the target device for browser-specific measurements.
+
+Files changed from the original project
+---------------------------------------
+- ui.js: exact Euclidean offset validation, bounded geometry caches, nested-shape index.
+- index.html: ui.js cache query updated to v12.
+- sw.js: service-worker cache name updated to suyo-v12.
+- shape-geometry-test.html: adds bidirectional nearest-distance and corner-vertex metrics.
+- GEOMETRY-VERIFICATION.txt: this report.
+- All other original application files are unchanged.

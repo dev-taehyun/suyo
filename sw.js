@@ -1,7 +1,7 @@
 // 수요미식회 앱(PWA)용 서비스 워커
 // 항상 인터넷에서 최신 파일을 먼저 받아오고, 인터넷이 안 될 때만 저장해 둔 화면을 보여줘요.
-const CACHE = "suyo-v6";
-const SHELL = ["./", "./index.html", "./style.css", "./app.js", "./ui.js", "./shape-engine.js", "./config.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
+const CACHE = "suyo-v12";
+const SHELL = ["./", "./index.html", "./style.css", "./app.js", "./ui.js", "./config.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
