@@ -25,8 +25,8 @@
   --seg-on: #ffffff;
   --seg-on-ink: #000000;
 
-  --font-display: system-ui, "SF Pro Display", "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif;
-  --font-body: system-ui, "SF Pro Text", "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-display: system-ui, "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-body: system-ui, "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif;
 
   --radius: 16px;
   --tabbar-h: 84px;
@@ -737,3 +737,118 @@ label { font-size: .8125rem; font-weight: 500; color: var(--muted); padding-left
 @media (min-width: 760px) {
   .map { height: 420px; }
 }
+
+/* ==== 프리미엄 테마 ==== */
+:root{
+  --bg:#fff;--surface:#f5f5f7;--surface-2:#e8e8ed;--ink:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;
+  --accent:#0071e3;--accent-soft:rgb(0 113 227/.1);--bubble-me:#0071e3;--bubble-other:#f5f5f7;
+  --bar:rgb(255 255 255/.8);--glass:rgb(255 255 255/.72);--scrim:rgb(0 0 0/.5);--shadow:none;
+  --seg-on:#fff;--seg-on-ink:#1d1d1f;--radius:28px;--maxw:760px;--hero:#bf4800;
+  --teal:#0f6f78;--glow-a:rgb(15 111 120/.28);--glow-b:rgb(0 113 227/.2);--glow-c:rgb(255 159 10/.16);
+  --font-display:system-ui,"Pretendard Variable",Pretendard,"Noto Sans KR",sans-serif;
+  --font-body:system-ui,"Pretendard Variable",Pretendard,"Noto Sans KR",sans-serif;
+}
+:root[data-theme="dark"]{
+  --bg:#000;--surface:#1d1d1f;--surface-2:rgb(255 255 255/.12);--ink:#f5f5f7;--muted:#86868b;--line:rgb(255 255 255/.16);
+  --accent:#2997ff;--accent-soft:rgb(41 151 255/.16);--bubble-me:#0071e3;--bubble-other:#1d1d1f;
+  --bar:rgb(22 22 23/.8);--glass:rgb(29 29 31/.72);--seg-on:#f5f5f7;--seg-on-ink:#1d1d1f;--hero:#ff9f0a;
+  --glow-a:rgb(24 160 172/.4);--glow-b:rgb(41 151 255/.3);--glow-c:rgb(255 159 10/.22);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#000;--surface:#1d1d1f;--surface-2:rgb(255 255 255/.12);--ink:#f5f5f7;--muted:#86868b;--line:rgb(255 255 255/.16);
+  --accent:#2997ff;--accent-soft:rgb(41 151 255/.16);--bubble-me:#0071e3;--bubble-other:#1d1d1f;
+  --bar:rgb(22 22 23/.8);--glass:rgb(29 29 31/.72);--seg-on:#f5f5f7;--seg-on-ink:#1d1d1f;--hero:#ff9f0a;
+  --glow-a:rgb(24 160 172/.4);--glow-b:rgb(41 151 255/.3);--glow-c:rgb(255 159 10/.22);
+}}
+body{font-family:var(--font-body);letter-spacing:-.01em}
+:focus-visible{outline:4px solid rgb(0 125 250/.6);outline-offset:1px}
+
+/* 상단 글래스 바 */
+.topbar{background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line);min-height:calc(44px + env(safe-area-inset-top))}
+.nav-title{font-size:.9375rem;font-weight:600;opacity:1;transform:none}
+.logo-mark{border-radius:8px;background:var(--teal);box-shadow:none}
+.logo-mark.big{width:104px;height:104px;border-radius:24px;font-size:60px;box-shadow:0 30px 80px var(--glow-a)}
+.avatar{background:var(--teal)}
+
+/* 히어로 타이포 — 큰 제목 */
+.large-head{position:relative;flex-direction:column;align-items:center;text-align:center;padding:44px 0 20px;
+  opacity:calc(1 - var(--sp,0)*.7);transform:translateY(calc(var(--sp,0)*-18px)) scale(calc(1 - var(--sp,0)*.04))}
+.large-head>:not(.large-text){position:absolute;right:0;top:12px}
+.large-title,.wordmark{font-family:var(--font-display);font-weight:600;letter-spacing:-.045em;line-height:1.05}
+.large-title{font-size:clamp(3rem,15vw,5rem)}
+.wordmark{font-size:clamp(2.5rem,12vw,3.5rem)}
+.eyebrow{font-size:1.0625rem;font-weight:600;letter-spacing:-.01em;color:var(--hero);margin-bottom:6px}
+.gate-sub{font-size:1.3125rem;font-weight:600;letter-spacing:-.02em;color:var(--muted)}
+.large-title{background:linear-gradient(180deg,var(--ink) 30%,var(--muted));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* 히어로 글로우 (디스플레이 빛번짐) */
+.view[data-view="home"]::before,.gate::before{content:"";position:absolute;left:50%;top:0;z-index:-1;width:min(900px,160vw);height:520px;transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(40% 55% at 30% 35%,var(--glow-a),transparent 70%),radial-gradient(40% 50% at 70% 30%,var(--glow-b),transparent 70%),radial-gradient(35% 40% at 52% 62%,var(--glow-c),transparent 70%);filter:blur(30px)}
+.view[data-view="home"]{position:relative;isolation:isolate}
+.gate{position:relative;isolation:isolate;overflow:hidden}
+.gate::before{animation:glow 1.6s var(--ease) both}
+@keyframes glow{from{opacity:0;transform:translateX(-50%) scale(.7)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+
+/* 섹션/카드 */
+.view{gap:44px}
+.group{gap:14px}
+.group-head h3{font-family:var(--font-display);font-size:clamp(1.5rem,6.5vw,2rem);font-weight:600;letter-spacing:-.035em}
+.group-head .btn.sm{font-size:1.0625rem;font-weight:400}
+.group-head .btn.sm::after{content:" ›";font-size:1.15em}
+.card{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:none}
+.card.flush{padding:6px 0}
+.card.flush .mini-item{padding:16px 24px}
+.card.flush .mini-item+.mini-item::before{left:24px}
+.card.notice-card{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.card-head h3{font-size:1.5rem;font-weight:600;letter-spacing:-.03em}
+.report-card{padding:32px 24px;gap:8px;background:radial-gradient(120% 140% at 0% 0%,var(--glow-a),transparent 60%),var(--surface)}
+.report-line{font-size:1.75rem;font-weight:600;letter-spacing:-.035em;line-height:1.15}
+.place-card{border-radius:22px}
+
+/* 숫자 강조 */
+.stat{background:var(--surface);border-radius:var(--radius);padding:22px 20px}
+.stat-label{font-size:.875rem;font-weight:600;color:var(--muted)}
+.stat-num{font-size:clamp(2.5rem,11vw,3.5rem);font-weight:600;letter-spacing:-.05em;line-height:1.05;
+  background:linear-gradient(135deg,var(--ink),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.rank .no{color:var(--hero)}
+
+/* 버튼: 980px 알약 */
+.btn{border-radius:980px;padding:12px 22px;font-weight:400;font-size:1.0625rem;transition:background .3s,opacity .2s,transform .2s var(--ease)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:#0077ed}
+.btn.ghost{background:transparent;color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.btn.danger{background:transparent;color:var(--no);box-shadow:inset 0 0 0 1px var(--no)}
+.btn.wide{border-radius:980px;padding:15px}
+.btn.sm{padding:7px 16px;font-size:.9375rem}
+.group-head .btn.sm,.group-head .btn.sm:hover{box-shadow:none}
+
+/* 입력창 */
+.card :is(input,textarea,select),.sheet :is(input,textarea,select),.modal :is(input,textarea,select),.gate-card :is(input,textarea,select){
+  background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-size:1.0625rem;box-shadow:none}
+.card :is(input,textarea,select):focus,.sheet :is(input,textarea,select):focus,.modal :is(input,textarea,select):focus,.gate-card :is(input,textarea,select):focus{
+  outline:0;border-color:var(--accent);box-shadow:0 0 0 4px rgb(0 125 250/.35)}
+.rsvp{border-radius:980px;padding:14px 0;font-weight:600;background:var(--bg);border:1px solid var(--line)}
+
+/* 세그먼트 */
+.seg{border-radius:980px;padding:4px;background:var(--surface-2);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.seg button{border-radius:980px;font-weight:500}
+.seg button.on{box-shadow:0 1px 4px rgb(0 0 0/.18)}
+
+/* 하단 탭바 */
+.tabbar{border-radius:980px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  box-shadow:0 0 0 .5px var(--line),0 12px 40px rgb(0 0 0/.18)}
+.tab{border-radius:980px;font-size:.6875rem}
+.tab.active{background:var(--surface-2);color:var(--ink)}
+
+/* 시트·모달 */
+.overlay{background:var(--scrim);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.sheet{background:var(--bg);border-radius:28px 28px 0 0;box-shadow:0 -1px 0 var(--line)}
+.modal{background:var(--surface);border-radius:28px}
+.sheet-head h3{font-size:1.25rem;font-weight:600;letter-spacing:-.025em}
+
+/* 스크롤 등장 (한 번만, 모션 줄이기 설정 존중) */
+@media (prefers-reduced-motion:no-preference){
+  .js-reveal .group:not(.in),.js-reveal .report-card:not(.in){opacity:0;transform:translateY(40px) scale(.97)}
+  .js-reveal .group,.js-reveal .report-card{transition:opacity 1s var(--ease),transform 1s var(--ease)}
+}
+@media (prefers-reduced-motion:reduce){.large-head{opacity:1;transform:none}.gate::before{animation:none}}

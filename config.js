@@ -13,7 +13,7 @@ window.SUYO_CONFIG = {
     appId: "1:1080988892508:web:112f44d9f98cbb79de9599"
   },
 
-  // 2) 카카오 디벨로퍼스 > 내 애플리케이션 > 앱 키 > "JavaScript 키"
+  // 2) 카카오 디벨로퍼스 > 내 앱 > 앱 키 > "JavaScript 키"
   kakaoJsKey: "69c063e42ec6b7d2ed5ec0cf82e8f576",
 
   // 3) 맛집 지도를 처음 열었을 때 보여줄 위치 (학교 근처 좌표로 바꾸면 좋아요)

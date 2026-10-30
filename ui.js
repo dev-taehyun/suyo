@@ -13,6 +13,24 @@
 
   function syncScroll() {
     document.body.classList.toggle("scrolled", window.scrollY > 40);
+    document.documentElement.style.setProperty("--sp", Math.min(window.scrollY / 320, 1).toFixed(3));
+  }
+
+  // 스크롤하면 섹션이 한 번만 부드럽게 올라와요
+  if ("IntersectionObserver" in window) {
+    document.documentElement.classList.add("js-reveal");
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.05 });
+    var seen = new WeakSet();
+    var scan = function () {
+      document.querySelectorAll(".view[data-view='home'] .group, .report-card").forEach(function (el) {
+        if (!seen.has(el)) { seen.add(el); io.observe(el); }
+      });
+    };
+    scan();
+    setTimeout(function () { document.querySelectorAll(".group,.report-card").forEach(function (el) { el.classList.add("in"); }); }, 4000);
+    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
   }
 
   function syncAvatar() {
