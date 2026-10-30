@@ -745,7 +745,13 @@ function renderHome() {
   const settlePeople = S.settle?.participants || [];
   if (S.settle && settlePeople.includes(S.uid) && S.settle.payer !== S.uid && !S.paid[S.uid]) actions.push({ key: "settle", title: "모임 정산을 확인해 주세요", detail: "아직 송금 확인이 되지 않았어요", state: "미완료" });
   if (S.fines.some((f) => f.uid === S.uid && !f.paid && Number(f.amount) > 0)) actions.push({ key: "fine", title: "미납 벌금이 있어요", detail: `${won(S.fines.filter((f) => f.uid === S.uid && !f.paid).reduce((sum, f) => sum + Number(f.amount || 0), 0))} 미납`, state: "확인 필요" });
-  const actionMark = { plan: "⌖", rsvp: "✓", polls: "☷", settle: "₩", fine: "!" };
+  const actionMark = {
+    plan: '<svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.2"/></svg>',
+    rsvp: '<svg viewBox="0 0 24 24"><path d="m5 12 4.2 4.2L19 6.5"/></svg>',
+    polls: '<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>',
+    settle: '<svg viewBox="0 0 24 24"><path d="M12 2v20M17 6.5c-.8-1-2.1-1.5-4.5-1.5-2.6 0-4.5 1.1-4.5 3s1.5 2.8 4.5 3.5 4.5 1.6 4.5 3.5-1.9 3-4.5 3c-2.2 0-3.8-.6-4.8-1.8"/></svg>',
+    fine: '<svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5M12 17.5h.01"/></svg>'
+  };
   $("#dashboard-actions").innerHTML = actions.map((a) => `<button class="dashboard-action" type="button" data-dashboard-action="${a.key}"><span class="dashboard-action-mark" aria-hidden="true">${actionMark[a.key]}</span><span class="dashboard-action-copy"><b>${esc(a.title)}</b><small>${esc(a.detail)}</small></span><span class="dashboard-action-state">${esc(a.state)}</span><span class="dashboard-action-arrow" aria-hidden="true">›</span></button>`).join("");
   $("#dashboard-action-count").textContent = actions.length ? `${actions.length}개` : "";
   const openPollsBox = $("#dashboard-polls");
